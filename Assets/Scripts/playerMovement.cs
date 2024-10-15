@@ -11,12 +11,12 @@ public class playerMovement : MonoBehaviour
     public float jumpPower;
     public float jumpCooldown;
     public float airMultiplier;
-    public float airGravityMultiplier = 0.5f; // Adjust the gravity when airborne
+    public float airGravityMultiplier = 0.5f; 
     bool jumpReady;
 
     [Header("Drag Settings")]
-    public float minAirDrag = 0.1f; // Minimum drag applied in the air
-    public float maxAirDrag = 5.0f; // Maximum drag applied in the air
+    public float minAirDrag = 0.1f; 
+    public float maxAirDrag = 5.0f; 
 
     [Header("Keybinds")]
     public KeyCode jumpKey;
@@ -27,29 +27,28 @@ public class playerMovement : MonoBehaviour
     bool isgrounded;
 
     public Transform orientation;
-    public Transform playerObject;  // The child object representing the player's visual model
-    public Transform cameraTransform;  // Reference to the camera's transform
+    public Transform playerObject;  
+    public Transform cameraTransform;  
 
     [Header("Raycast")]
-    public float rayDistance = 1.5f;  // Distance to check if grounded
+    public float rayDistance = 1.5f;
 
     public Animator animator;
 
     private Rigidbody rb;
 
-    // Input and movement variables
     float horizontalInput;
     float verticalInput;
-
     Vector3 movementDirection;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
 
+        //rb null check
         if (rb == null)
         {
-            Debug.LogError("Rigidbody is not getting called"); // null check
+            Debug.LogError("Rigidbody is not getting called"); 
         }
 
         rb.freezeRotation = true;
@@ -58,42 +57,41 @@ public class playerMovement : MonoBehaviour
 
     private void Update()
     {
-        GroundCheck();  // Perform ground check
+        GroundCheck(); 
 
-        // Handle drag control depending on whether the player is grounded or not
+        //ground drag and resets rotation while grounded
         if (isgrounded)
         {
-            rb.drag = groundDrag;  // Set normal ground drag
-            ResetAirRotation();    // Reset air rotation when grounded
+            rb.drag = groundDrag;  
+            ResetAirRotation();    
         }
+        //air drag and adjusts rotation
         else
         {
-            rb.drag = CalculateAirDrag();  // Apply dynamic air drag based on orientation
-            RotatePlayerInAir();           // Apply air rotation while airborne (falling or moving)
+            rb.drag = CalculateAirDrag();  
+            RotatePlayerInAir();         
         }
 
-        PlayerInputs();   // Handle player input
-        SpeedController();  // Handle speed
+        PlayerInputs();   
+        SpeedController(); 
     }
 
     private void FixedUpdate()
     {
-        playerMove();  // Handle movement in FixedUpdate
+        playerMove();  
 
-        // Adjust vertical velocity if airborne to apply gravity effect
+        //custom gravity when not grounded
         if (!isgrounded)
         {
-            AdjustGravity();  // Apply custom gravity scale
+            AdjustGravity();  
         }
     }
 
     private void PlayerInputs()
     {
-        // Get player input
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
-        // Jump logic
         if (Input.GetKey(jumpKey) && jumpReady && isgrounded)
         {
             animator.SetTrigger("Jump");
@@ -105,40 +103,37 @@ public class playerMovement : MonoBehaviour
 
     void playerMove()
     {
-        // Calculate movement direction
         movementDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
 
+        //adds force for grounded movement
         if (isgrounded)
         {
-            // Grounded movement
             rb.AddForce(movementDirection.normalized * movementSpeed * 10f, ForceMode.Force);
 
-            // Update animator states for grounded movement
             if (movementDirection.magnitude > 0)
             {
                 animator.SetBool("isWalking", true);
-                animator.SetBool("isAirWalking", false); // Reset air walking
+                animator.SetBool("isAirWalking", false); 
             }
             else
             {
                 animator.SetBool("isWalking", false);
-                animator.SetBool("isAirWalking", false); // Reset air walking
+                animator.SetBool("isAirWalking", false); 
             }
         }
+        //ads force for air movement
         else
         {
-            // Airborne movement (apply air multiplier)
             rb.AddForce(movementDirection.normalized * movementSpeed * 10f * airMultiplier, ForceMode.Force);
 
-            // Update animator states for airborne movement
             if (movementDirection.magnitude > 0)
             {
-                animator.SetBool("isAirWalking", true); // Set air walking
-                animator.SetBool("isWalking", false); // Reset walking
+                animator.SetBool("isAirWalking", true); 
+                animator.SetBool("isWalking", false); 
             }
             else
             {
-                animator.SetBool("isAirWalking", false); // Reset air walking if no input
+                animator.SetBool("isAirWalking", false); 
             }
         }
     }
@@ -154,6 +149,7 @@ public class playerMovement : MonoBehaviour
         }
     }
 
+    //function for jump force
     void JumpAction()
     {
         rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
@@ -165,73 +161,75 @@ public class playerMovement : MonoBehaviour
         jumpReady = true;
     }
 
-    // Ground check to update isgrounded
+    //function for raycast to detect ground layer
     void GroundCheck()
     {
         RaycastHit hit;
 
-        // Raycast to check if grounded
         if (Physics.Raycast(transform.position, Vector3.down, out hit, playerHeight * 0.5f + 0.3f, Ground))
         {
-            isgrounded = true;   // Player is grounded
-            transform.SetParent(hit.transform);  // Set parent when grounded
+            isgrounded = true;   
+            transform.SetParent(hit.transform); 
         }
         else
         {
-            isgrounded = false;  // Player is in the air
-            transform.SetParent(null);  // Unparent when in the air
+            isgrounded = false; 
+            transform.SetParent(null); 
         }
     }
 
-    // Handle player rotation in the air
+    //active whenever player is not grounded
     void RotatePlayerInAir()
     {
-        // Set the player object to 90 degrees on the X-axis initially
+        //rotates 90 on the x
         playerObject.localRotation = Quaternion.Euler(90f, playerObject.localRotation.eulerAngles.y, playerObject.localRotation.eulerAngles.z);
 
-        // Calculate the angle based on the camera's forward vector
-        float cameraAngle = Vector3.Angle(cameraTransform.forward, Vector3.up);  // Get angle from up vector
+        //gets camera angle for x(up)
+        float cameraAngle = Vector3.Angle(cameraTransform.forward, Vector3.up); 
 
-        // Map the angle to adjust the player's rotation
-        float rotationAmount = cameraAngle - 90f; // Calculate rotation based on camera angle
-        rotationAmount = Mathf.Clamp(rotationAmount, -90f, 90f); // Clamp to prevent excessive flipping
+        //gets camera angle - 90 so have the player rotate with cam, - 90f to keep sideways
+        float rotationAmount = cameraAngle - 90f; 
 
-        // Apply rotation to the player object based on the camera's angle
+        //sets limits on the rotation
+        rotationAmount = Mathf.Clamp(rotationAmount, -90f, 90f);
+
+        //apply rotation to player object with the calculations
         playerObject.localRotation = Quaternion.Euler(90f + rotationAmount, playerObject.localRotation.eulerAngles.y, playerObject.localRotation.eulerAngles.z);
     }
 
-    // Reset player rotation when grounded
+    //active whenever player is grounded
     void ResetAirRotation()
     {
-        // Reset rotation to 0 degrees on the X-axis when grounded
+        //resets player x axis to 0
         playerObject.localRotation = Quaternion.Euler(0f, playerObject.localRotation.eulerAngles.y, playerObject.localRotation.eulerAngles.z);
     }
 
     // Dynamic air drag calculation based on camera and player orientation
     float CalculateAirDrag()
     {
-        // Get the forward vector of the camera
+        //gets a vector of the camera wherever you are looking at
         Vector3 cameraForward = cameraTransform.forward;
 
-        // Calculate the angle between the camera's forward vector and the up direction
-        float angle = Vector3.Angle(cameraForward, Vector3.up); // Angle from the up direction
+        //gets the angle between the vector(camera direction) and vector(up)
+        //dot product of the 2 vectors divided by the magnitude of the 2 vectors multiplied = cos(angle).
+        float angle = Vector3.Angle(cameraForward, Vector3.up);
 
-        // Normalize the angle to a range from 0 (up) to 180 (down)
-        float normalizedAngle = Mathf.InverseLerp(0f, 180f, angle); // Map angle to [0, 1]
+        //angle range from 0 to 180
+        float normalizedAngle = Mathf.InverseLerp(0f, 180f, angle);
 
-        // Use the normalized angle to interpolate between maxAirDrag and minAirDrag
+        //using max and min and a range [correspondes with 0 to 180 on the normalized Angle to get the drag]
         float dragFactor = Mathf.Lerp(maxAirDrag, minAirDrag, normalizedAngle);
 
         return dragFactor;
     }
 
-    // Adjust vertical velocity to apply custom gravity while airborne
+    //function for custom air gravity
     void AdjustGravity()
     {
-        // Modify the vertical velocity to apply custom gravity while in the air
         Vector3 velocity = rb.velocity;
-        velocity.y += Physics.gravity.y * airGravityMultiplier * Time.fixedDeltaTime; // Apply custom gravity scale
-        rb.velocity = velocity; // Update Rigidbody velocity
+        //custom gravity
+        velocity.y += Physics.gravity.y * airGravityMultiplier * Time.fixedDeltaTime;
+        rb.velocity = velocity;
     }
 
 }
